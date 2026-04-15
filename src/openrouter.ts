@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import {
   FactCheckResult,
   FactCheckApiResult,
@@ -89,6 +90,12 @@ export async function extractTextFromImage(
   imageUrl: string
 ): Promise<string> {
   try {
+    Sentry.addBreadcrumb({
+      category: "ai",
+      message: "OpenRouter vision: extractTextFromImage",
+      level: "info",
+    });
+
     const response = await fetch(OPENROUTER_URL, {
       method: "POST",
       headers: buildHeaders(apiKey),
@@ -131,6 +138,12 @@ export async function analyzeClaimWithGrounding(
   factCheckResults?: FactCheckApiResult[]
 ): Promise<FactCheckResult> {
   try {
+    Sentry.addBreadcrumb({
+      category: "ai",
+      message: "OpenRouter LLM: analyzeClaimWithGrounding",
+      level: "info",
+    });
+
     const userMessage = buildUserMessage(claimText, factCheckResults);
 
     const response = await fetch(OPENROUTER_URL, {

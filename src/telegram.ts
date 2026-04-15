@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/cloudflare";
+
 export async function sendMessage(
   token: string,
   chatId: number,
@@ -48,6 +50,12 @@ async function telegramApi(
   method: string,
   body: Record<string, unknown>
 ): Promise<{ result?: Record<string, unknown> }> {
+  Sentry.addBreadcrumb({
+    category: "telegram",
+    message: `Telegram API: ${method}`,
+    level: "info",
+  });
+
   const response = await fetch(
     `https://api.telegram.org/bot${token}/${method}`,
     {

@@ -1,3 +1,4 @@
+import path from "path";
 import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config";
 
 export default defineWorkersConfig({
@@ -15,6 +16,11 @@ export default defineWorkersConfig({
           },
         },
       },
+    },
+  },
+  resolve: {
+    alias: {
+      "@sentry/cloudflare": path.resolve(__dirname, "test/__mocks__/sentry.ts"),
     },
   },
 });

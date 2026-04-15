@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import { CachedClaim } from "./types";
 
 export function normalizeForHash(text: string): string {
@@ -27,6 +28,12 @@ export async function getCachedClaim(
     )
     .bind(claimHash)
     .first<CachedClaim>();
+
+  Sentry.addBreadcrumb({
+    category: "cache",
+    message: row ? "Cache hit for claim" : "Cache miss for claim",
+    level: "info",
+  });
 
   return row ?? null;
 }

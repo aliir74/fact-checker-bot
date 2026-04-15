@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import { FactCheckApiResult } from "./types";
 
 const FACT_CHECK_API_URL =
@@ -22,6 +23,12 @@ export async function queryFactCheck(
   claimText: string
 ): Promise<FactCheckApiResult[]> {
   try {
+    Sentry.addBreadcrumb({
+      category: "api",
+      message: "Google Fact Check API query",
+      level: "info",
+    });
+
     const truncated = claimText.slice(0, 200);
     const url = `${FACT_CHECK_API_URL}?query=${encodeURIComponent(truncated)}&key=${apiKey}&languageCode=en`;
 
