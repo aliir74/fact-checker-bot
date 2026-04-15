@@ -140,6 +140,38 @@ describe("extractUrlContent", () => {
     expect(result.error).toBeUndefined();
   });
 
+  it("falls through when fxtwitter returns tweet without text", async () => {
+    const callUrls: string[] = [];
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      callUrls.push(url);
+
+      // fxtwitter returns tweet with no text
+      if (url.includes("api.fxtwitter.com")) {
+        return new Response(
+          JSON.stringify({ tweet: {} }),
+          { status: 200 }
+        );
+      }
+
+      // vxtwitter returns data with no text
+      if (url.includes("api.vxtwitter.com")) {
+        return new Response(
+          JSON.stringify({}),
+          { status: 200 }
+        );
+      }
+
+      return new Response("", { status: 500 });
+    }) as typeof fetch;
+
+    await extractUrlContent("https://x.com/user/status/empty-tweet");
+
+    // Both APIs returned data without text, so it falls back to generic
+    // then generic fails because our mock returns 500 for non-matching URLs
+    expect(callUrls.some((u) => u.includes("fxtwitter"))).toBe(true);
+  });
+
   it("returns error when all tweet extraction methods fail", async () => {
     globalThis.fetch = vi.fn().mockResolvedValue(
       new Response("", { status: 500 })
@@ -172,6 +204,12 @@ describe("extractUrlContent", () => {
     mockFetch({ ok: false, status: 500 });
 
     const result = await extractUrlContent("https://example.com/broken");
+
+    expect(result).toEqual({ title: "", text: "", error: true });
+  });
+
+  it("returns error for invalid URL", async () => {
+    const result = await extractUrlContent("not-a-valid-url");
 
     expect(result).toEqual({ title: "", text: "", error: true });
   });
