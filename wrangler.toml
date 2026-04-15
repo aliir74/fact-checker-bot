@@ -1,0 +1,11 @@
+name = "fact-checker-bot"
+main = "src/index.ts"
+compatibility_date = "2025-04-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "fact-checker-db"
+database_id = "10f0160e-195a-4773-87a0-0059c0319f87"
+
+[triggers]
+crons = ["0 3 * * *"]
