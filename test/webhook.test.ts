@@ -41,7 +41,7 @@ function makeVoiceUpdate() {
 }
 
 function mockExternalApis() {
-  const sentMessages: Array<{ chat_id: number; text: string }> = [];
+  const sentMessages: Array<{ chat_id: number; text: string; parse_mode?: string }> = [];
   const originalFetch = globalThis.fetch;
 
   const mockFetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -50,7 +50,7 @@ function mockExternalApis() {
     // Capture Telegram sendMessage calls
     if (url.includes("api.telegram.org") && url.includes("sendMessage")) {
       const body = JSON.parse((init?.body as string) || "{}");
-      sentMessages.push({ chat_id: body.chat_id, text: body.text });
+      sentMessages.push({ chat_id: body.chat_id, text: body.text, parse_mode: body.parse_mode });
       return new Response(JSON.stringify({ ok: true }), { status: 200 });
     }
 
@@ -95,7 +95,7 @@ function mockExternalApis() {
 
 describe("Webhook handler", () => {
   let originalFetch: typeof fetch;
-  let sentMessages: Array<{ chat_id: number; text: string }>;
+  let sentMessages: Array<{ chat_id: number; text: string; parse_mode?: string }>;
 
   beforeEach(async () => {
     await setupDB();
@@ -150,6 +150,7 @@ describe("Webhook handler", () => {
     expect(lastMessage.chat_id).toBe(123);
     expect(lastMessage.text).toContain("Verdict");
     expect(lastMessage.text).toContain("False");
+    expect(lastMessage.parse_mode).toBe("HTML");
   });
 
   it("rejects voice messages with guidance", async () => {

@@ -10,6 +10,30 @@ const VERDICT_EMOJIS: Record<Verdict, string> = {
   "Unverifiable": "\u2753",
 };
 
+export function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+export function toHtml(text: string): string {
+  const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
+  let result = "";
+  let lastIndex = 0;
+  let match;
+
+  while ((match = linkRegex.exec(text)) !== null) {
+    result += escapeHtml(text.slice(lastIndex, match.index));
+    result += `<a href="${escapeHtml(match[2])}">${escapeHtml(match[1])}</a>`;
+    lastIndex = match.index + match[0].length;
+  }
+
+  result += escapeHtml(text.slice(lastIndex));
+  return result;
+}
+
 export function formatResponse(result: FactCheckResult, claimText: string): string {
   const emoji = VERDICT_EMOJIS[result.verdict] || "\u2753";
   const sourceLabel = result.sourceType === "fact_check_api"
@@ -17,22 +41,22 @@ export function formatResponse(result: FactCheckResult, claimText: string): stri
     : "AI Analysis";
 
   const lines: string[] = [
-    `${emoji} Verdict: ${result.verdict} (${result.confidence} Confidence)`,
+    `${emoji} Verdict: ${escapeHtml(result.verdict)} (${escapeHtml(result.confidence)} Confidence)`,
     "",
-    `\uD83D\uDCCB Claim: "${truncateForDisplay(claimText, 200)}"`,
+    `\uD83D\uDCCB Claim: "${escapeHtml(truncateForDisplay(claimText, 200))}"`,
     "",
     `\uD83D\uDD0D Analysis:`,
-    result.analysisEn,
+    toHtml(result.analysisEn),
     "",
     `\uD83D\uDD0D \u062A\u062D\u0644\u06CC\u0644:`,
-    result.analysisFa,
+    toHtml(result.analysisFa),
   ];
 
   if (result.sources.length > 0) {
     lines.push("");
     lines.push(`\uD83D\uDCCE Sources:`);
     for (const source of result.sources) {
-      lines.push(`- ${source}`);
+      lines.push(`- <a href="${escapeHtml(source)}">${escapeHtml(source)}</a>`);
     }
   }
 

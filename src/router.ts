@@ -71,7 +71,8 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
       await sendMessage(
         env.TELEGRAM_BOT_TOKEN,
         chatId,
-        formatWelcomeMessage()
+        formatWelcomeMessage(),
+        "HTML"
       );
       return new Response("OK", { status: 200 });
     }
@@ -80,7 +81,8 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
       await sendMessage(
         env.TELEGRAM_BOT_TOKEN,
         chatId,
-        formatRejectedInputResponse()
+        formatRejectedInputResponse(),
+        "HTML"
       );
       return new Response("OK", { status: 200 });
     }
@@ -91,7 +93,8 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
       await sendMessage(
         env.TELEGRAM_BOT_TOKEN,
         chatId,
-        formatRateLimitResponse(rateLimit.retryAfterSeconds ?? 60)
+        formatRateLimitResponse(rateLimit.retryAfterSeconds ?? 60),
+        "HTML"
       );
       return new Response("OK", { status: 200 });
     }
@@ -116,7 +119,7 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
       responseText += formatTruncatedNotice();
     }
 
-    await sendMessage(env.TELEGRAM_BOT_TOKEN, chatId, responseText);
+    await sendMessage(env.TELEGRAM_BOT_TOKEN, chatId, responseText, "HTML");
   } catch (error) {
     console.error("Webhook error:", error);
     if (chatId) {
@@ -124,7 +127,8 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
         await sendMessage(
           env.TELEGRAM_BOT_TOKEN,
           chatId,
-          formatErrorResponse()
+          formatErrorResponse(),
+          "HTML"
         );
       } catch {
         // Can't send error message
