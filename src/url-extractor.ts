@@ -57,10 +57,12 @@ export async function extractUrlContent(
 
     // Twitter/X URL handling
     if (hostname.includes("twitter.com") || hostname.includes("x.com")) {
-      return await extractTwitterContent(parsed);
+      const result = await extractTwitterContent(parsed);
+      if (!result.error) return result;
+      console.error(`Tweet API failed for ${url}, falling back to generic extraction`);
     }
 
-    // Generic URL handling
+    // Generic URL handling (also serves as fallback for failed tweet extraction)
     return await extractGenericContent(url);
   } catch {
     return { title: "", text: "", error: true };
@@ -70,29 +72,44 @@ export async function extractUrlContent(
 async function extractTwitterContent(
   parsed: URL
 ): Promise<ExtractedContent> {
+  // Try fxtwitter first
   try {
     const fxUrl = `https://api.fxtwitter.com${parsed.pathname}`;
-    const response = await fetch(fxUrl);
-
-    if (!response.ok) {
-      return { title: "", text: "", error: true };
-    }
-
-    const data = (await response.json()) as {
-      tweet?: {
-        text?: string;
-        author?: { name?: string };
+    const response = await fetch(fxUrl, {
+      headers: { "User-Agent": "FactCheckerBot/1.0" },
+    });
+    if (response.ok) {
+      const data = (await response.json()) as {
+        tweet?: { text?: string; author?: { name?: string } };
       };
-    };
-
-    return {
-      title: "",
-      text: data.tweet?.text ?? "",
-      author: data.tweet?.author?.name,
-    };
+      if (data.tweet?.text) {
+        return { title: "", text: data.tweet.text, author: data.tweet.author?.name };
+      }
+    }
   } catch {
-    return { title: "", text: "", error: true };
+    // Fall through to vxtwitter
   }
+
+  // Try vxtwitter as fallback (different response format: flat structure)
+  try {
+    const vxUrl = `https://api.vxtwitter.com${parsed.pathname}`;
+    const response = await fetch(vxUrl, {
+      headers: { "User-Agent": "FactCheckerBot/1.0" },
+    });
+    if (response.ok) {
+      const data = (await response.json()) as {
+        text?: string;
+        user_name?: string;
+      };
+      if (data.text) {
+        return { title: "", text: data.text, author: data.user_name };
+      }
+    }
+  } catch {
+    // Fall through to error
+  }
+
+  return { title: "", text: "", error: true };
 }
 
 async function extractGenericContent(url: string): Promise<ExtractedContent> {

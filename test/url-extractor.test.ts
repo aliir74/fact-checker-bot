@@ -50,7 +50,8 @@ describe("extractUrlContent", () => {
     );
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.fxtwitter.com/user/status/123456789"
+      "https://api.fxtwitter.com/user/status/123456789",
+      { headers: { "User-Agent": "FactCheckerBot/1.0" } }
     );
     expect(result).toEqual({
       title: "",
@@ -75,7 +76,8 @@ describe("extractUrlContent", () => {
     );
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.fxtwitter.com/someone/status/987654321"
+      "https://api.fxtwitter.com/someone/status/987654321",
+      { headers: { "User-Agent": "FactCheckerBot/1.0" } }
     );
     expect(result).toEqual({
       title: "",
@@ -84,8 +86,64 @@ describe("extractUrlContent", () => {
     });
   });
 
-  it("returns error for failed twitter fetch", async () => {
-    mockFetch({ ok: false, status: 404 });
+  it("falls back to vxtwitter when fxtwitter fails", async () => {
+    let callCount = 0;
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      callCount++;
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("fxtwitter")) {
+        return new Response("", { status: 404 });
+      }
+      if (url.includes("vxtwitter")) {
+        return new Response(
+          JSON.stringify({
+            text: "Fallback tweet text",
+            user_name: "VX User",
+          }),
+          { status: 200 }
+        );
+      }
+      return new Response("", { status: 500 });
+    }) as typeof fetch;
+
+    const result = await extractUrlContent(
+      "https://x.com/someone/status/111"
+    );
+
+    expect(callCount).toBe(2);
+    expect(result).toEqual({
+      title: "",
+      text: "Fallback tweet text",
+      author: "VX User",
+    });
+  });
+
+  it("falls back to generic extraction when both tweet APIs fail", async () => {
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("fxtwitter") || url.includes("vxtwitter")) {
+        return new Response("", { status: 500 });
+      }
+      // Generic fetch of the x.com URL
+      return new Response(
+        "<html><head><title>Tweet Page</title></head><body><p>Some tweet content from HTML</p></body></html>",
+        { status: 200 }
+      );
+    }) as typeof fetch;
+
+    const result = await extractUrlContent(
+      "https://x.com/someone/status/222"
+    );
+
+    expect(result.title).toBe("Tweet Page");
+    expect(result.text).toContain("Some tweet content from HTML");
+    expect(result.error).toBeUndefined();
+  });
+
+  it("returns error when all tweet extraction methods fail", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response("", { status: 500 })
+    ) as typeof fetch;
 
     const result = await extractUrlContent(
       "https://twitter.com/user/status/000"
