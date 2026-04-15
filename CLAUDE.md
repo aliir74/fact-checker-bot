@@ -34,3 +34,4 @@ Telegram webhook → Worker → Input Parser → Cache Check → Rate Limit Chec
 - `OPENROUTER_API_KEY`
 - `GOOGLE_FACT_CHECK_API_KEY`
 - `TELEGRAM_WEBHOOK_SECRET`
+- `SENTRY_DSN`
