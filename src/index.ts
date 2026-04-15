@@ -5,7 +5,7 @@ import { purgeOldUsage } from "./rate-limiter";
 import { handleRequest } from "./router";
 
 const handler: ExportedHandler<Env> = {
-  async fetch(request, env, ctx) {
+  async fetch(request, env, _ctx) {
     return await handleRequest(request, env);
   },
 

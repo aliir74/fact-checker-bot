@@ -8,12 +8,19 @@
     "deploy": "wrangler deploy",
     "test": "vitest run",
     "test:watch": "vitest",
+    "lint": "eslint src/ test/",
+    "typecheck": "tsc --noEmit",
     "db:migrate:local": "wrangler d1 execute fact-checker-db --local --file=schema.sql",
     "db:migrate:remote": "wrangler d1 execute fact-checker-db --remote --file=schema.sql"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.8.0",
     "@cloudflare/workers-types": "^4.20250327.0",
+    "@eslint/js": "^10.0.1",
+    "@vitest/coverage-istanbul": "^3.2.4",
+    "eslint": "^10.2.0",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.58.2",
     "vitest": "^3.1.1",
     "wrangler": "^4.14.0"
   },

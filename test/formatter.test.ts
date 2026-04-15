@@ -81,6 +81,12 @@ describe("formatResponse", () => {
     expect(text).not.toContain("Sources:");
   });
 
+  it("falls back to question mark emoji for unknown verdict", () => {
+    const result = makeResult({ verdict: "Unknown" as FactCheckResult["verdict"] });
+    const text = formatResponse(result, "claim");
+    expect(text).toContain("\u2753");
+  });
+
   it("truncates long claim text for display", () => {
     const longClaim = "x".repeat(300);
     const result = makeResult();

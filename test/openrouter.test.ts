@@ -414,6 +414,65 @@ describe("analyzeClaimWithGrounding", () => {
     expect(result.analysisEn).toBe("Failed to analyze claim");
   });
 
+  it("defaults missing fields in parsed response", async () => {
+    mockFetchResponse({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({}),
+          },
+        },
+      ],
+    });
+
+    const result = await analyzeClaimWithGrounding(
+      TEST_API_KEY,
+      "test claim"
+    );
+
+    expect(result.verdict).toBe("Unverifiable");
+    expect(result.confidence).toBe("Low");
+    expect(result.analysisEn).toBe("");
+    expect(result.analysisFa).toBe("");
+    expect(result.sources).toEqual([]);
+  });
+
+  it("returns fact_check_api sourceType in default result when factCheckResults provided and API fails", async () => {
+    mockFetchResponse({ error: "Server Error" }, 500);
+
+    const result = await analyzeClaimWithGrounding(
+      TEST_API_KEY,
+      "test claim",
+      [
+        {
+          claim: "test",
+          claimant: "someone",
+          rating: "True",
+          source: "Snopes",
+          url: "https://snopes.com",
+        },
+      ]
+    );
+
+    expect(result.sourceType).toBe("fact_check_api");
+    expect(result.verdict).toBe("Unverifiable");
+  });
+
+  it("returns ai_analysis sourceType in default result when no factCheckResults and API fails via catch", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new Error("Connection refused"))
+    );
+
+    const result = await analyzeClaimWithGrounding(
+      TEST_API_KEY,
+      "test claim",
+      undefined
+    );
+
+    expect(result.sourceType).toBe("ai_analysis");
+  });
+
   it("handles missing content in response", async () => {
     mockFetchResponse({
       choices: [{ message: {} }],
