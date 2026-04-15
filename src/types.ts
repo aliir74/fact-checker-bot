@@ -13,6 +13,7 @@ export type ClaimInput =
   | { type: "text"; text: string; truncated?: boolean }
   | { type: "image"; fileId: string; caption?: string }
   | { type: "url"; url: string; surroundingText?: string }
+  | { type: "command"; command: string }
   | { type: "rejected"; reason: string };
 
 export interface FactCheckResult {

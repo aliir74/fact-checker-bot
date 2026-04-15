@@ -29,7 +29,12 @@ export function parseInput(message: TelegramMessage): ClaimInput {
     };
   }
 
-  // 4. Text message
+  // 4. Bot commands
+  if (message.text && message.text.startsWith("/")) {
+    return { type: "command", command: message.text.split(" ")[0].split("@")[0] };
+  }
+
+  // 5. Text message
   if (message.text) {
     const urlRegex = /https?:\/\/\S+/g;
     const urls = message.text.match(urlRegex);

@@ -359,7 +359,7 @@ describe("analyzeClaimWithGrounding", () => {
     expect(headers["X-Title"]).toBe("Fact Checker Bot");
 
     const body = JSON.parse(options.body as string);
-    expect(body.model).toBe("google/gemini-2.5-flash-preview-04-17");
+    expect(body.model).toBe("google/gemini-2.5-flash");
     expect(body.temperature).toBe(0.3);
     expect(body.max_tokens).toBe(4000);
     expect(body.plugins).toEqual([{ id: "web" }]);

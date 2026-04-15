@@ -9,6 +9,7 @@ import {
   formatErrorResponse,
   formatRejectedInputResponse,
   formatTruncatedNotice,
+  formatWelcomeMessage,
 } from "./formatter";
 import { sendMessage, sendChatAction, setWebhook } from "./telegram";
 import { TelegramUpdate } from "./types";
@@ -61,6 +62,15 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
 
     // Parse input
     const input = parseInput(message);
+
+    if (input.type === "command") {
+      await sendMessage(
+        env.TELEGRAM_BOT_TOKEN,
+        chatId,
+        formatWelcomeMessage()
+      );
+      return new Response("OK", { status: 200 });
+    }
 
     if (input.type === "rejected") {
       await sendMessage(

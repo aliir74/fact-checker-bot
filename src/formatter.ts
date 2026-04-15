@@ -68,6 +68,28 @@ export function formatRejectedInputResponse(): string {
   ].join("\n");
 }
 
+export function formatWelcomeMessage(): string {
+  return [
+    "Welcome to Fact Checker Bot!",
+    "",
+    "Send me a claim to fact-check:",
+    "- Text message with a claim",
+    "- Screenshot of a social media post",
+    "- Link to an article or tweet",
+    "",
+    "I'll analyze it and provide a bilingual verdict (English + Persian) with sources.",
+    "",
+    "---",
+    "",
+    "\u0628\u0647 \u0631\u0628\u0627\u062A \u0631\u0627\u0633\u062A\u06CC\u200C\u0622\u0632\u0645\u0627\u06CC\u06CC \u062E\u0648\u0634 \u0622\u0645\u062F\u06CC\u062F!",
+    "",
+    "\u06CC\u06A9 \u0627\u062F\u0639\u0627 \u0628\u0631\u0627\u06CC \u0628\u0631\u0631\u0633\u06CC \u0628\u0641\u0631\u0633\u062A\u06CC\u062F:",
+    "- \u0645\u062A\u0646 \u0627\u062F\u0639\u0627",
+    "- \u0627\u0633\u06A9\u0631\u06CC\u0646\u200C\u0634\u0627\u062A \u0627\u0632 \u067E\u0633\u062A \u0634\u0628\u06A9\u0647 \u0627\u062C\u062A\u0645\u0627\u0639\u06CC",
+    "- \u0644\u06CC\u0646\u06A9 \u0645\u0642\u0627\u0644\u0647 \u06CC\u0627 \u062A\u0648\u06CC\u06CC\u062A",
+  ].join("\n");
+}
+
 export function formatTruncatedNotice(): string {
   return "\n\n\u2702\uFE0F Text was truncated to 2000 characters.";
 }

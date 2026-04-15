@@ -6,7 +6,7 @@ import {
 } from "./types";
 
 const VISION_MODEL = "google/gemini-2.0-flash-001";
-const ANALYSIS_MODEL = "google/gemini-2.5-flash-preview-04-17";
+const ANALYSIS_MODEL = "google/gemini-2.5-flash";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 

@@ -108,6 +108,7 @@ async function resolveClaimText(
       return parts.join("\n\n");
     }
 
+    case "command":
     case "rejected":
       return null;
   }
