@@ -4,6 +4,7 @@ export interface Env {
   OPENROUTER_API_KEY: string;
   GOOGLE_FACT_CHECK_API_KEY: string;
   TELEGRAM_WEBHOOK_SECRET: string;
+  SENTRY_DSN: string;
 }
 
 export const RATE_LIMIT_MAX = 5;

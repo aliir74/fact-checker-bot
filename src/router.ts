@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare";
 import { Env } from "./config";
 import { upsertUser } from "./cache";
 import { checkRateLimit, recordRequest } from "./rate-limiter";
@@ -61,11 +62,15 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
     const userId = String(message.from?.id ?? chatId);
     const username = message.from?.username;
 
+    Sentry.setUser({ id: userId, username });
+    Sentry.setTag("chat_id", String(chatId));
+
     // Upsert user
     await upsertUser(env.DB, userId, username);
 
     // Parse input
     const input = parseInput(message);
+    Sentry.setTag("input_type", input.type);
 
     if (input.type === "command") {
       await sendMessage(
@@ -121,6 +126,7 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
 
     await sendMessage(env.TELEGRAM_BOT_TOKEN, chatId, responseText, "HTML");
   } catch (error) {
+    Sentry.captureException(error);
     console.error("Webhook error:", error);
     if (chatId) {
       try {
