@@ -38,12 +38,16 @@ export async function handleRequest(
   return new Response("Not Found", { status: 404 });
 }
 
+const PIPELINE_TIMEOUT_MS = 25_000; // 25s — leave buffer for error message before worker dies
+
 async function handleWebhook(request: Request, env: Env): Promise<Response> {
   // Verify webhook secret
   const secretHeader = request.headers.get("X-Telegram-Bot-Api-Secret-Token");
   if (secretHeader !== env.TELEGRAM_WEBHOOK_SECRET) {
     return new Response("Unauthorized", { status: 401 });
   }
+
+  let chatId: number | undefined;
 
   try {
     const update = (await request.json()) as TelegramUpdate;
@@ -53,7 +57,7 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
       return new Response("OK", { status: 200 });
     }
 
-    const chatId = message.chat.id;
+    chatId = message.chat.id;
     const userId = String(message.from?.id ?? chatId);
     const username = message.from?.username;
 
@@ -98,8 +102,13 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
     // Show typing indicator
     await sendChatAction(env.TELEGRAM_BOT_TOKEN, chatId, "typing");
 
-    // Run fact-check pipeline
-    const { result } = await factCheck(env, input);
+    // Run fact-check pipeline with timeout
+    const { result } = await Promise.race([
+      factCheck(env, input),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Fact-check pipeline timed out")), PIPELINE_TIMEOUT_MS)
+      ),
+    ]);
 
     // Format and send response
     let responseText = formatResponse(result, result.claimText);
@@ -110,18 +119,16 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
     await sendMessage(env.TELEGRAM_BOT_TOKEN, chatId, responseText);
   } catch (error) {
     console.error("Webhook error:", error);
-    // Try to send error message if we have enough context
-    try {
-      const body = await request.clone().json() as TelegramUpdate;
-      if (body.message?.chat?.id) {
+    if (chatId) {
+      try {
         await sendMessage(
           env.TELEGRAM_BOT_TOKEN,
-          body.message.chat.id,
+          chatId,
           formatErrorResponse()
         );
+      } catch {
+        // Can't send error message
       }
-    } catch {
-      // Ignore — we can't send an error message
     }
   }
 
