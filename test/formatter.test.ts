@@ -5,6 +5,8 @@ import {
   formatErrorResponse,
   formatRejectedInputResponse,
   formatTruncatedNotice,
+  escapeHtml,
+  toHtml,
 } from "../src/formatter";
 import { FactCheckResult } from "../src/types";
 
@@ -22,7 +24,7 @@ function makeResult(overrides: Partial<FactCheckResult> = {}): FactCheckResult {
 }
 
 describe("formatResponse", () => {
-  it("formats a complete fact-check response", () => {
+  it("formats a complete fact-check response with HTML", () => {
     const result = makeResult();
     const text = formatResponse(result, "Test claim");
 
@@ -32,8 +34,8 @@ describe("formatResponse", () => {
     expect(text).toContain("Analysis:");
     expect(text).toContain("This claim is false");
     expect(text).toContain("\u062A\u062D\u0644\u06CC\u0644:");
-    expect(text).toContain("source1.com");
-    expect(text).toContain("source2.com");
+    expect(text).toContain('<a href="https://source1.com">https://source1.com</a>');
+    expect(text).toContain('<a href="https://source2.com">https://source2.com</a>');
     expect(text).toContain("AI Analysis");
   });
 
@@ -84,6 +86,83 @@ describe("formatResponse", () => {
     const result = makeResult();
     const text = formatResponse(result, longClaim);
     expect(text).toContain("...");
+  });
+
+  it("escapes HTML special chars in analysis text", () => {
+    const result = makeResult({
+      analysisEn: "Claims about A & B are <disputed>.",
+    });
+    const text = formatResponse(result, "claim");
+    expect(text).toContain("A &amp; B are &lt;disputed&gt;");
+  });
+
+  it("converts markdown links in analysis to HTML anchors", () => {
+    const result = makeResult({
+      analysisEn: "According to [OhMyNews](https://ohmynews.com/article) the claim is false.",
+    });
+    const text = formatResponse(result, "claim");
+    expect(text).toContain('<a href="https://ohmynews.com/article">OhMyNews</a>');
+    expect(text).not.toContain("[OhMyNews]");
+  });
+
+  it("escapes HTML in claim text", () => {
+    const result = makeResult();
+    const text = formatResponse(result, "A & B <test>");
+    expect(text).toContain("A &amp; B &lt;test&gt;");
+  });
+
+  it("handles source URLs with query params", () => {
+    const result = makeResult({
+      sources: ["https://example.com/page?a=1&b=2"],
+    });
+    const text = formatResponse(result, "claim");
+    expect(text).toContain('<a href="https://example.com/page?a=1&amp;b=2">https://example.com/page?a=1&amp;b=2</a>');
+  });
+});
+
+describe("escapeHtml", () => {
+  it("escapes &, <, >", () => {
+    expect(escapeHtml("a & b < c > d")).toBe("a &amp; b &lt; c &gt; d");
+  });
+
+  it("leaves normal text unchanged", () => {
+    expect(escapeHtml("hello world")).toBe("hello world");
+  });
+
+  it("handles empty string", () => {
+    expect(escapeHtml("")).toBe("");
+  });
+});
+
+describe("toHtml", () => {
+  it("converts markdown links to HTML anchors", () => {
+    expect(toHtml("see [Google](https://google.com) for details")).toBe(
+      'see <a href="https://google.com">Google</a> for details'
+    );
+  });
+
+  it("escapes HTML in surrounding text", () => {
+    expect(toHtml("A & B [link](https://example.com) C < D")).toBe(
+      'A &amp; B <a href="https://example.com">link</a> C &lt; D'
+    );
+  });
+
+  it("handles multiple markdown links", () => {
+    const input = "[A](https://a.com) and [B](https://b.com)";
+    const expected = '<a href="https://a.com">A</a> and <a href="https://b.com">B</a>';
+    expect(toHtml(input)).toBe(expected);
+  });
+
+  it("returns escaped text when no links present", () => {
+    expect(toHtml("plain text with <angle> & ampersand")).toBe(
+      "plain text with &lt;angle&gt; &amp; ampersand"
+    );
+  });
+
+  it("escapes HTML in link text", () => {
+    expect(toHtml("[A & B](https://example.com)")).toBe(
+      '<a href="https://example.com">A &amp; B</a>'
+    );
   });
 });
 
