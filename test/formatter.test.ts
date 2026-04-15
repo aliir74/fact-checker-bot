@@ -121,8 +121,9 @@ describe("formatResponse", () => {
 });
 
 describe("escapeHtml", () => {
-  it("escapes &, <, >", () => {
+  it("escapes &, <, >, and double quotes", () => {
     expect(escapeHtml("a & b < c > d")).toBe("a &amp; b &lt; c &gt; d");
+    expect(escapeHtml('say "hello"')).toBe("say &quot;hello&quot;");
   });
 
   it("leaves normal text unchanged", () => {
